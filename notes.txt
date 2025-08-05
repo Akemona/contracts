@@ -1,0 +1,5 @@
+Must use ganache-cli.  (and not UI version of ganache)
+For debugging gas:  ganache-cli --gasLimit=0x1fffffffffffff
+
+npx truffle compile
+npx truffle test --compile-none

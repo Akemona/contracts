@@ -1,0 +1,11 @@
+build
+flattened
+node_modules
+node_modules_temp
+test_temp
+v1contracts
+contracts.ts
+contracts.js
+contracts.json
+notes2.txt
+notes3.txt

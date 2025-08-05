@@ -1,0 +1,34 @@
+{
+  "name": "akemonacontracts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "abi-decoder": "^2.4.0",
+    "chai": "^4.3.7",
+    "chai-bn": "^0.2.1",
+    "openzeppelin-solidity": "^4.8.1",
+    "openzeppelin-test-helpers": "^0.5.1",
+    "scrypt": "github:barrysteyn/node-scrypt#fb60a8d3c158fe115a624b5ffa7480f3a24b03fb",
+    "sha3": "^2.1.4",
+    "solc": "^0.8.21",
+    "truffle": "^5.11.5",
+    "truffle-test-utils": "^0.1.0",
+    "web3": "^4.3.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-verify": "^2.0.7",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nomiclabs/hardhat-etherscan": "^3.1.8",
+    "@types/node": "^20.5.1",
+    "hardhat": "^2.22.4"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
