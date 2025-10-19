@@ -1,4 +1,3 @@
-//const { BN, balance, ether, should, shouldFail, time, expectEvent } = require('openzeppelin-test-helpers');//require('../node_modules/openzeppelin-test-helpers');
 const { BN, balance, constants, ether, expectEvent, makeInterfaceId, send, expectRevert, singletons, time } = require('openzeppelin-test-helpers');//require('../node_modules/openzeppelin-test-helpers');
 
 const chai = require('chai');
@@ -19,17 +18,8 @@ const AkemonaProxy = artifacts.require("AkemonaProxy");
 const Akenro = artifacts.require("Akenro");
 const AkemonaSecurityTokenFactory = artifacts.require("AkemonaSecurityTokenFactory");
 
-//const AkemonaProxy = artifacts.require("AkemonaProxy");
 
 const web3 = require('web3')
-
-
-//https://github.com/ethereum/wiki/wiki/JavaScript-API#contract-methods
-
-// TODO: 11pm testing
-
-// out of gas? try using the latest Ganache
-// also check that the contract isn't just too large
 
 
 var calculateDailyRate = function (annualRate) {
@@ -107,21 +97,6 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
     assert(await this.usdc.transfer(investor, toBN(1000000), { from: usdcOwner }));
     (await this.usdc.balanceOf(investor)).should.be.bignumber.equal(toBN(1000000));
 
-    /*
-            address payable _usdc, 
-            address _whitelist, 
-            address _escrow, 
-            uint256 _openingTime, 
-            uint256 _closingTime, 
-
-            uint256 _minimumInvestment,
-            uint256 _goal,
-            uint256 _cap,
-
-            uint256 _maturityTime,
-            uint256 _effectiveDailyRate
-    */
-
     this.tokenFactory = await AkemonaSecurityTokenFactory.new();
 
     this.protocol = await AkemonaProtocol.new(
@@ -161,7 +136,6 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
     var offering = await this.protocol.offerings(offeringId);
     this.token = await AkemonaSecurityToken.at(offering.securityToken);
 
-    //this.proxy1 = await AkemonaProxy.new(this.crowdsale.address);
   });
 
   it('should throw an error if the wrong transaction ID is used', async function () {
@@ -349,7 +323,6 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
 
     assert(difference < 1.001 && difference > 0.999);
 
-    //getPricePerToken
   })
 
   it('emits a approval event', async function () {
@@ -368,7 +341,6 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
 
     let purchaseAmount = toBN(50000);
 
-    //await this.
 
     await this.usdc.approve.sendTransaction(this.crowdsale.address, purchaseAmount, { from: investor });
     await this.crowdsale.purchase.sendTransaction({ from: investor });
@@ -422,8 +394,6 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
     await this.crowdsale.requestRefundForPurchase(0, { from: investor });
 
     var purchase = await this.crowdsale.purchases(0);
-
-    //console.log(purchase);
 
     assert(purchase.refundRequested === true && purchase.refundAllocated === false);
 
@@ -493,8 +463,6 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
 
     var purchase = await this.crowdsale.purchases(1);
 
-    //console.log(purchase);
-
     assert(purchase.refundRequested === true && purchase.refundAllocated === false);
 
     await this.usdc.approve.sendTransaction(this.crowdsale.address, purchaseAmount, { from: escrow });
@@ -548,8 +516,6 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
 
     var purchase = await this.crowdsale.purchases(1);
 
-    //console.log(purchase);
-
     assert(purchase.refundRequested === true && purchase.refundAllocated === false);
 
     await this.usdc.approve.sendTransaction(this.crowdsale.address, purchaseAmount.mul((new BN(2))), { from: escrow });
@@ -566,11 +532,6 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
     purchase = await this.crowdsale.purchases(1);
 
     assert(purchase.refundRequested === true && purchase.refundAllocated === true);
-
-    //var refunds = await this.crowdsale.getPendingRefundsToDisburse();
-    //console.log('refunds', refunds);
-
-
 
     await this.crowdsale.processRefund(1, { from: investor });
 
@@ -615,11 +576,6 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
 
     (await this.usdc.balanceOf(escrow)).should.be.bignumber.equal(purchaseAmount);
 
-    //await this.whitelist.addException(investor, investor2, { from: akemona });
-
-    //let test1 = await this.whitelist.hasException(investor, investor2);
-    //console.log('test1', test1);
-
     await debug ( this.crowdsale.recoverLostTokens([0], investor2, { from: akemona }) );
 
     (await this.token.balanceOf(investor2)).should.be.bignumber.equal(numTokensExpected);
@@ -639,9 +595,6 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
     await this.crowdsale.processPurchases([investor], [purchaseAmount], [numTokensExpected], { from: akemona });
 
     (await this.usdc.balanceOf(escrow)).should.be.bignumber.equal(purchaseAmount);
-
-    //await this.whitelist.addException(investor, investor2, { from: akemona });
-
 
     return new Promise((resolve, reject) => {
       this.crowdsale.recoverLostTokens([0], investor2, { from: investor2 }).then(function () {
@@ -669,12 +622,6 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
     (await this.usdc.balanceOf(escrow)).should.be.bignumber.equal(purchaseAmount);
 
     await this.whitelist.addException(investor, investor2, { from: akemona });
-
-    //let test1 = await this.whitelist.hasException(investor, investor2);
-    //console.log('test1', test1);
-
-    //var tokenAddress = await this.token.token();
-    //var token = await AkemonaCrowdsaleToken.at(tokenAddress);
 
     const { logs } = await this.token.transfer(investor2, numTokensExpected, { from: investor });
 
@@ -730,10 +677,6 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
 
     await this.crowdsale.addWhitelist(this.whitelist2.address, { from: akemona });
 
-
-    //const { logs } = await this.token.transfer(investor2, numTokensExpected, { from: investor });
-
-    //(await this.token.balanceOf(investor2)).should.be.bignumber.equal(numTokensExpected);
     return new Promise((resolve, reject) => {
       this.token.transfer(investor2, numTokensExpected, { from: investor }).then(function () {
         resolve()
