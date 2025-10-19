@@ -14,8 +14,6 @@ contract AkemonaProtocol is
 {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    uint256 transactionId;
-
     // ================
     // Protocol-level roles, tokens, fees
     // ================
@@ -53,6 +51,7 @@ contract AkemonaProtocol is
         address securityToken;
         bool closed; // track if offering is "closed"
         bool exists;
+        uint256 transactionId;
     }
 
     // offeringId => Offering
@@ -158,7 +157,6 @@ contract AkemonaProtocol is
 
         nextOfferingId = 1;
         nextWhitelistId = 1;
-        transactionId = 1;
     }
 
     // --------------------------------------------------------------------------------
@@ -213,7 +211,8 @@ contract AkemonaProtocol is
             securityType: securityType,
             securityToken: newToken,
             closed: false,
-            exists: true
+            exists: true,            
+            transactionId: 1
         });
         nextOfferingId++;
 
@@ -335,8 +334,8 @@ contract AkemonaProtocol is
     function processPurchasesOnBehalfOf(uint256 offeringId, address[] memory _addresses, uint256[] memory _amounts, uint256[] memory amountToIssue, bytes32[] memory _offchainInvestmentIds, uint256 _transactionId) external {        
         Offering storage off = offerings[offeringId];
         require(msg.sender == off.owner || hasRole(PROTOCOL_ADMIN_ROLE, msg.sender), "Not owner/admin");
-        require(transactionId == _transactionId, "Transaction ID mismatch");
-        transactionId = transactionId + 1;
+        require(off.transactionId == _transactionId, "Transaction ID mismatch");
+        off.transactionId = off.transactionId + 1;
 
         require(!off.isDisbursed, "Offering is disbursed");
         require(block.timestamp > off.openingTime, "Offering openingTime is not yet passed.");
