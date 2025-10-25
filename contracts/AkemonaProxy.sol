@@ -1,7 +1,7 @@
 
 import "../node_modules/openzeppelin-solidity/contracts/access/AccessControlEnumerable.sol";
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.17;
 
 contract AkemonaProxy is AccessControlEnumerable {
 

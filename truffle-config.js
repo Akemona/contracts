@@ -47,11 +47,23 @@ module.exports = {
     //  port: 8545,            // Standard Ethereum port (default: none)
     //  network_id: "*",       // Any network (default: none)
     // },
+    develop: {
+      host: "127.0.0.1",
+      port: 9545,
+      network_id: "*",
+      gas: 85000000000000,
+      gasPrice: 0,
+      gasLimit: "0x1fffffffffffff",
+      defaultEtherBalance: 5000000
+    },
+
     development: {
       host: "127.0.0.1",
-      port: 8545,
+      port: 9545,
       network_id: "*",
-      gasPrice: 20000000000
+      gas: 85000000000000,
+      gasPrice: 0,
+      gasLimit: "0x1fffffffffffff"
     },
 
     // Another network with more advanced options...
@@ -88,16 +100,18 @@ module.exports = {
     // timeout: 100000
   },
 
+  plugins: [ 'truffle-contract-size' ],
+
   // Configure your compilers
   compilers: {
     solc: {
-      version: "0.8.19",
+      version: "0.8.17",
       // version: "0.5.1",    // Fetch exact version from solc-bin (default: truffle's version)
       // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
       settings: {          // See the solidity docs for advice about optimization and evmVersion
         optimizer: {
           enabled: true,
-          runs: 200
+          runs: 1
         },
         viaIR: true
         //,

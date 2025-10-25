@@ -7,17 +7,23 @@ contract AkemonaSecurityTokenFactory is IAkemonaSecurityTokenFactory
 {
 
     function deployToken(
+        address identityRegistry,
+        address compliance,
         uint256 offeringId,
         string memory name,
         string memory symbol,
-        address protocolAddress
+        address protocolAddress, 
+        address onchainID
     ) external override returns (address) {
 
         AkemonaSecurityToken token = new AkemonaSecurityToken(
+            identityRegistry,
+            compliance,
             offeringId,
             name,
             symbol,
-            protocolAddress
+            protocolAddress,
+            onchainID
         );
 
         token.grantRole(token.DEFAULT_ADMIN_ROLE(), msg.sender);

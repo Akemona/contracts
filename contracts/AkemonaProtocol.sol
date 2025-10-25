@@ -227,10 +227,13 @@ contract AkemonaProtocol is
         uint256 offeringId
     ) internal returns (address) {
         address tokenAddress = IAkemonaSecurityTokenFactory(securityTokenFactoryAddress).deployToken(
+            address(0), // TODO
+            address(0), // TODO
             offeringId,
             name,
             symbol,
-            address(this)
+            address(this),
+            address(0) // TODO
         );
 
         IAkemonaSecurityToken token = IAkemonaSecurityToken(tokenAddress);
