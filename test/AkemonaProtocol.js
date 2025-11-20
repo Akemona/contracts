@@ -50,6 +50,7 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
   const MININVEST = 10;
   const GOAL = 100000;
   const CAP = 200000;
+  const MAXSUPPLY = 400000;
   const MATURITYTIME = Math.floor(Date.now() / 1000) + 365 * 5 * 24 * 3600;
   const DISBURSEMENTTIME = MATURITYTIME + 100 * 24 * 3600;
   const EFFDAILYRATE = new BN(DAILYRATE * 1e18);
@@ -124,6 +125,7 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
       toBN(MININVEST),
       toBN(GOAL),
       toBN(CAP),
+      toBN(MAXSUPPLY),
       EFFDAILYRATE,
       false,
       "securityType",
@@ -141,7 +143,7 @@ contract("AkemonaProtocol", function ([_, akemona, investor, escrow, usdcOwner, 
   it('should pass the beforeEach', async function () {
 
   })
-if(0) {
+
   it('should throw an error if the wrong transaction ID is used', async function () {
 
     let purchaseAmounts = [toBN(50000)];
@@ -692,7 +694,7 @@ if(0) {
     
 
   });
-}
+
   /*
     beforeEach(async function () {
       this.openingTime = (await time.latest()).add(time.duration.weeks(1));

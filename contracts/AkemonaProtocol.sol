@@ -37,7 +37,8 @@ contract AkemonaProtocol is
         address owner;
         address escrow;
         uint256 goal;
-        uint256 cap;
+        uint256 cap;  // The initial cap
+        uint256 maxSupply;  // The absolute maximum number of tokens that can ever exist.
         uint256 raised;
         uint256 openingTime;
         uint256 closingTime;
@@ -173,6 +174,7 @@ contract AkemonaProtocol is
         uint256 minimumInvestment,
         uint256 goal,
         uint256 cap,
+        uint256 maxSupply,
         uint256 effectiveDailyRate,
         bool directRefund,
         string memory securityType,
@@ -201,6 +203,7 @@ contract AkemonaProtocol is
             escrow: escrow,
             goal: goal,
             cap: cap,
+            maxSupply: maxSupply,
             raised: 0,
             openingTime: openingTime,
             closingTime: closingTime,
