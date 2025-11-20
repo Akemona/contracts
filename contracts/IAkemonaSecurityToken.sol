@@ -20,4 +20,12 @@ interface IAkemonaSecurityToken {
         uint256 amount
     ) external returns (bool);
 
+    function transferFromMerkle(
+        address from,
+        address to,
+        uint256 amount,
+        bytes32[] calldata fromProof,
+        bytes32[] calldata toProof
+    ) external returns (bool);
+
 }

@@ -52,6 +52,8 @@ contract AkemonaProtocol is
         bool closed; // track if offering is "closed"
         bool exists;
         uint256 transactionId;
+        uint256 merkleInvestorCount;
+        uint256 merkleInvestmentCount;
     }
 
     // offeringId => Offering
@@ -212,7 +214,9 @@ contract AkemonaProtocol is
             securityToken: newToken,
             closed: false,
             exists: true,            
-            transactionId: 1
+            transactionId: 1,
+            merkleInvestorCount: 0,
+            merkleInvestmentCount: 0
         });
         nextOfferingId++;
 
@@ -401,6 +405,21 @@ contract AkemonaProtocol is
         return false;
     }
 
+    function processMerkleNoWalletPurchases(uint256 offeringId, uint256 usdcAmount, uint256 _merkleInvestorCount, uint256 _merkleInvestmentCount) external {
+        Offering storage off = offerings[offeringId];
+        require(off.exists, "No offering");
+        require(!off.closed, "Offering closed");
+        require(block.timestamp >= off.openingTime, "Not open yet");
+        require(block.timestamp <= off.closingTime, "Already closed");
+        require(usdcAmount + off.raised <= off.cap, "Cap exceeded");
+        require(msg.sender == off.owner || hasRole(PROTOCOL_ADMIN_ROLE, msg.sender), "Not owner/admin");
+
+        IAkemonaSecurityToken(off.securityToken).mint(address(this), usdcAmount);
+        off.raised += usdcAmount;
+        off.merkleInvestorCount = _merkleInvestorCount;
+        off.merkleInvestmentCount = _merkleInvestmentCount;
+    }
+
     function processNoWalletPurchase(
         uint256 offeringId,
         bytes32 investorId,
@@ -413,6 +432,7 @@ contract AkemonaProtocol is
         require(block.timestamp >= off.openingTime, "Not open yet");
         require(block.timestamp <= off.closingTime, "Already closed");
         require(usdcAmount + off.raised <= off.cap, "Cap exceeded");
+        require(msg.sender == off.owner || hasRole(PROTOCOL_ADMIN_ROLE, msg.sender), "Not owner/admin");
 
         IAkemonaSecurityToken(off.securityToken).mint(address(this), usdcAmount);
 
@@ -544,6 +564,21 @@ contract AkemonaProtocol is
             }
         }
 
+    }
+
+    function processMerkleNoWalletRefunds(uint256 offeringId, uint256 usdcAmount, uint256 _merkleInvestorCount, uint256 _merkleInvestmentCount) external {
+        Offering storage off = offerings[offeringId];
+        require(off.exists, "No offering");
+        require(!off.closed, "Offering closed");
+        require(block.timestamp >= off.openingTime, "Not open yet");
+        require(block.timestamp <= off.closingTime, "Already closed");
+        require(usdcAmount + off.raised <= off.cap, "Cap exceeded");
+        require(msg.sender == off.owner || hasRole(PROTOCOL_ADMIN_ROLE, msg.sender), "Not owner/admin");
+
+        IAkemonaSecurityToken(off.securityToken).mint(address(this), usdcAmount);
+        off.raised -= usdcAmount;
+        off.merkleInvestorCount = _merkleInvestorCount;
+        off.merkleInvestmentCount = _merkleInvestmentCount;
     }
 
     // processRefund
@@ -824,6 +859,31 @@ contract AkemonaProtocol is
         for (uint256 i = 0; i < wlIds.length; i++) {
             WhitelistInfo storage wli = whitelists[wlIds[i]];
             bool authorized = IAkemonaWhitelist(wli.whitelistContract).isTransferAuthorized(offeringId, from, to, value);
+            if (authorized) {
+                return true;
+            }
+        }
+        // if none whitelists says yes, we say false
+        return false;
+    }
+
+    function isTransferAuthorizedMerkle(
+        uint256 offeringId,
+        address from,
+        address to,
+        bytes32[] calldata fromProof,
+        bytes32[] calldata toProof
+    ) external view override returns (bool) {
+        // 1) check if offering is disbursed
+        Offering storage off = offerings[offeringId];
+        if (!off.isDisbursed) {
+            return false;
+        }
+        // 2) check whitelists
+        uint256[] memory wlIds = offeringToWhitelists[offeringId];
+        for (uint256 i = 0; i < wlIds.length; i++) {
+            WhitelistInfo storage wli = whitelists[wlIds[i]];
+            bool authorized = IAkemonaWhitelist(wli.whitelistContract).isTransferAuthorizedMerkle(offeringId, from, to, fromProof, toProof);
             if (authorized) {
                 return true;
             }

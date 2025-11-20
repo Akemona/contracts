@@ -39,6 +39,9 @@ contract AkemonaDisbursement is IAkemonaDisbursement {
 
     uint256 public currentRound;
 
+    uint256 public merkleRootVersion;
+    bytes32 public currentMerkleRoot;
+
 
     struct RedemptionRequest {
         bool onBehalfOf;
@@ -92,6 +95,11 @@ contract AkemonaDisbursement is IAkemonaDisbursement {
     modifier restricted() {
         require(msg.sender == owner, "E3");
         _;
+    }
+
+    function setMerkle(uint256 _version, bytes32 _root) external restricted {
+        merkleRootVersion = _version;
+        currentMerkleRoot = _root;
     }
 
     function isOpen() public view override returns (bool) {
@@ -246,7 +254,75 @@ contract AkemonaDisbursement is IAkemonaDisbursement {
         return disbursementWallets[walletRedemptionRequest[msg.sender].disbursementWalletIndex
     }
 */
-    function redeemDisbursement() public {
+
+    function verifyCalldata(
+        bytes32[] calldata proof,
+        bytes32 root,
+        bytes32 leaf
+    ) internal pure returns (bool) {
+        return processProofCalldata(proof, leaf) == root;
+    }
+
+    function processProofCalldata(
+        bytes32[] calldata proof,
+        bytes32 leaf
+    ) internal pure returns (bytes32) {
+        bytes32 computedHash = leaf;
+        for (uint256 i = 0; i < proof.length; i++) {
+            computedHash = _hashPair(computedHash, proof[i]);
+        }
+        return computedHash;
+    }
+
+    function _hashPair(bytes32 a, bytes32 b)
+        private
+        pure
+        returns(bytes32)
+    {
+        return a < b ? _efficientHash(a, b) : _efficientHash(b, a);
+    }
+
+    function _efficientHash(bytes32 a, bytes32 b)
+        private
+        pure
+        returns (bytes32 value)
+    {
+        assembly {
+            mstore(0x00, a)
+            mstore(0x20, b)
+            value := keccak256(0x00, 0x40)
+        }
+    }
+
+    function redeemDisbursementMerkle(address walletAddress, uint256 allocatedAmount, bytes32[] calldata proof) external {
+        require(isOpen(), "disbursement is not open");
+        
+        require(walletRedemptionRequest[msg.sender].offchainRedemption == false, "disbursement is designated as offchain");
+        uint256 allowance = usdc.allowance(disbursementWallets[walletRedemptionRequest[msg.sender].disbursementWalletIndex], address(this));
+
+        require(allowance >= allocatedAmount, "insufficient approval in wallet");
+        require(walletRedemptionRequest[msg.sender].redemptionClaimed == false, "disbursement has already been redeemed");
+
+        require(verifyCalldata(proof, currentMerkleRoot, keccak256(abi.encodePacked(walletAddress, allocatedAmount))), "E");
+
+        walletRedemptionRequest[msg.sender].allocatedAmount = allocatedAmount;
+
+        // Ensure this flag gets set before the USDC transfer
+        walletRedemptionRequest[msg.sender].redemptionClaimed = true;
+        require(usdc.transferFrom(disbursementWallets[walletRedemptionRequest[msg.sender].disbursementWalletIndex], msg.sender, walletRedemptionRequest[msg.sender].allocatedAmount), "USDC transfer failed.");
+
+        if (walletRedemptionRequest[msg.sender].burnAmount == 0) {
+            if (_isFinal) {
+                token.burnFrom(msg.sender, token.balanceOf(msg.sender));
+            }
+        } else {
+            token.burnFrom(msg.sender, walletRedemptionRequest[msg.sender].burnAmount);
+        }
+
+        emit DisbursementRedeemedEvent(msg.sender, 0, walletRedemptionRequest[msg.sender].allocatedAmount, walletRedemptionRequest[msg.sender].burnAmount, walletRedemptionRequest[msg.sender].disbursementWalletIndex,walletRedemptionRequest[msg.sender].offchainRedemption, getSerialNumber(), currentRound);
+    }
+
+    function redeemDisbursement() external {
         require(isOpen(), "disbursement is not open");
         //for (uint256 i = 0; i < purchaseIndexes.length; i++) {
             //address addr = crowdsale.getInvestorForPurchaseIndex(purchaseIndexes[i]);

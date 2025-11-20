@@ -115,6 +115,20 @@ contract AkemonaSecurityToken is ERC20PresetMinterPauser, IAkemonaSecurityToken 
     }
 
     function transferFrom(address from, address to, uint256 amount) public override(ERC20, IAkemonaSecurityToken) returns (bool) {
-        return ERC20.transferFrom(from, to, amount);
+        _transfer(from, to, amount);
+        return true;
+    }
+
+    function transferFromMerkle(address from, address to, uint256 amount, bytes32[] calldata fromProof, bytes32[] calldata toProof) public override(IAkemonaSecurityToken) returns (bool) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            require(protocol.isTransferAuthorizedMerkle(offeringId, from, to, fromProof, toProof), "Transfer is not authorized.");
+
+            if (hasDisbursement()) {
+                require(disbursement.isOpen() == false, "Cannot transfer while disbursement is open.");
+            }
+        }
+    
+        super._transfer(from, to, amount);
+        return true;
     }
 }

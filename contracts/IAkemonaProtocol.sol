@@ -6,6 +6,14 @@ interface IAkemonaProtocol {
         uint256 value
     ) external view returns (bool);
 
+    function isTransferAuthorizedMerkle(
+        uint256 offeringId,
+        address from,
+        address to,
+        bytes32[] calldata fromProof,
+        bytes32[] calldata toProof
+    ) external view returns (bool);
+
     function getOfferingOwnerAddress(
         uint256 offeringId
     ) external view returns (address);

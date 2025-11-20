@@ -13,9 +13,15 @@ contract AkemonaWhitelistPermissionless is IAkemonaWhitelist {
 
     mapping (address => bool) public whitelisted;
 
-    constructor(address _protocol) public {
+    uint256 public merkleRootVersion;
+    bytes32 public currentMerkleRoot;
+
+    bool public largeScale;
+
+    constructor(address _protocol, bool _largeScale) public {
         owner = msg.sender;
         protocol = IAkemonaProtocol(_protocol);
+        largeScale = _largeScale;
     }
 
     modifier restricted() {
@@ -23,14 +29,79 @@ contract AkemonaWhitelistPermissionless is IAkemonaWhitelist {
         _;
     }
 
+    function setMerkle(uint256 _version, bytes32 _root) public restricted {
+        merkleRootVersion = _version;
+        currentMerkleRoot = _root;
+    }
+
+    function verifyCalldata(
+        bytes32[] calldata proof,
+        bytes32 root,
+        bytes32 leaf
+    ) internal pure returns (bool) {
+        return processProofCalldata(proof, leaf) == root;
+    }
+
+    function processProofCalldata(
+        bytes32[] calldata proof,
+        bytes32 leaf
+    ) internal pure returns (bytes32) {
+        bytes32 computedHash = leaf;
+        for (uint256 i = 0; i < proof.length; i++) {
+            computedHash = _hashPair(computedHash, proof[i]);
+        }
+        return computedHash;
+    }
+
+    function _hashPair(bytes32 a, bytes32 b)
+        private
+        pure
+        returns(bytes32)
+    {
+        return a < b ? _efficientHash(a, b) : _efficientHash(b, a);
+    }
+
+    function _efficientHash(bytes32 a, bytes32 b)
+        private
+        pure
+        returns (bytes32 value)
+    {
+        assembly {
+            mstore(0x00, a)
+            mstore(0x20, b)
+            value := keccak256(0x00, 0x40)
+        }
+    }
+
+    function isPurchaseAuthorizedMerkle(address _investor, bytes32[] calldata proof) external view override returns (bool) {
+        require(largeScale == true);
+        return verifyCalldata(proof, currentMerkleRoot, keccak256(abi.encodePacked(_investor)));
+    }
+
     function isPurchaseAuthorized(address _investor, uint256 _amount) external view override returns (bool) {
+        require(largeScale == false);
         if (!whitelisted[_investor]) {
             return false;
         }
         return true;
     }
 
+    function isTransferAuthorizedMerkle(uint256 _offeringId, address _from, address _to, bytes32[] calldata _fromProof, bytes32[] calldata _toProof) external view override returns (bool) {
+        require(largeScale == true);
+
+        if (!verifyCalldata(_toProof, currentMerkleRoot, keccak256(abi.encodePacked(_from)))) {
+            return false;
+        }
+        if (!verifyCalldata(_toProof, currentMerkleRoot, keccak256(abi.encodePacked(_to)))) {
+            return false;
+        }
+
+        // If the crowdsale contract is in a buyback period, and the toAddress is the borrower, and the fromAddress is an original investor in the crowdsale, return true
+        return false;
+    }
+
     function isTransferAuthorized(uint256 _offeringId, address _from, address _to, uint256 _amount) external view override returns (bool) {
+        require(largeScale == false);
         //if (!_contract.isDisbursed()) {
         //    return false;
         //}
